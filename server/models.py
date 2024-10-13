@@ -1,12 +1,15 @@
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import MetaData
-from sqlalchemy.orm import validates
+from sqlalchemy import MetaData, ForeignKey
+from sqlalchemy.orm import validates, relationship
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy_serializer import SerializerMixin
 
 metadata = MetaData(naming_convention={
     "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
 })
+
+
+
 
 db = SQLAlchemy(metadata=metadata)
 
@@ -18,10 +21,10 @@ class Restaurant(db.Model, SerializerMixin):
     name = db.Column(db.String)
     address = db.Column(db.String)
 
-    # add relationship
+    # Relationship to RestaurantPizza
     restaurant_pizzas = db.relationship('RestaurantPizza', backref='restaurant', lazy=True)
 
-    # add serialization rules
+    # Serialization rules
     serialize_rules = ('-restaurant_pizzas.restaurant',)
 
     def __repr__(self):
@@ -35,10 +38,10 @@ class Pizza(db.Model, SerializerMixin):
     name = db.Column(db.String)
     ingredients = db.Column(db.String)
 
-    # add relationship
+    # Relationship to RestaurantPizza
     restaurant_pizzas = db.relationship('RestaurantPizza', backref='pizza', lazy=True)
 
-    # add serialization rules
+    # Serialization rules
     serialize_rules = ('-restaurant_pizzas.pizza',)
 
     def __repr__(self):
@@ -51,18 +54,17 @@ class RestaurantPizza(db.Model, SerializerMixin):
     id = db.Column(db.Integer, primary_key=True)
     price = db.Column(db.Integer, nullable=False)
 
-    # add relationships
+    # Foreign keys
     pizza_id = db.Column(db.Integer, db.ForeignKey('pizzas.id'), nullable=False)
     restaurant_id = db.Column(db.Integer, db.ForeignKey('restaurants.id'), nullable=False)
 
-    # add serialization rules
-    serialize_rules = ('-pizza.restaurant_pizzas', '-restaurant.restaurant_pizzas')
-
-    # add validation
+    # Validation to ensure price is between 1 and 30
+    @validates('price')
     def validate_price(self, key, value):
         if value < 1 or value > 30:
             raise ValueError("Price must be between 1 and 30")
         return value
-        
+
     def __repr__(self):
         return f'<RestaurantPizza ${self.price}>'
+
