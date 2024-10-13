@@ -22,6 +22,7 @@ class Restaurant(db.Model, SerializerMixin):
     restaurant_pizzas = db.relationship('RestaurantPizza', backref='restaurant', lazy=True)
 
     # add serialization rules
+    serialize_rules = ('-restaurant_pizzas.restaurant',)
 
     def __repr__(self):
         return f'<Restaurant {self.name}>'
